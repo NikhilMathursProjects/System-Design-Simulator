@@ -1,0 +1,11 @@
+[tool.ruff]
+line-length = 120
+
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N"]
+ignore = ["E501"]  # we handle long lines manually
+
+[tool.pytest.ini_options]
+testpaths = ["engine/tests", "api/tests"]

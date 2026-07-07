@@ -1,0 +1,13 @@
+[project]
+name = "sysdesign-api"
+version = "0.1.0"
+requires-python = ">=3.9"
+dependencies = [
+    "sysdesign-engine",
+    "fastapi>=0.100",
+    "uvicorn[standard]",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
