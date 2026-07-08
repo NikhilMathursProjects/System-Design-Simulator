@@ -1,3 +1,0 @@
-sysdesign-engine
-fastapi>=0.100
-uvicorn[standard]
