@@ -5,6 +5,7 @@ requires-python = ">=3.9"
 dependencies = [
     "simpy>=4.0",
     "pydantic>=2.0",
+    "pytest>=8.4",
 ]
 
 [build-system]

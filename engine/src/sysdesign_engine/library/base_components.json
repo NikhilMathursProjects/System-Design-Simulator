@@ -1,153 +1,154 @@
 {
-    "client":{
-        "type":"client",
-        "caps":[],
-        "authoritative":false,
-        "service_times":{},
-        "cost":{},
-        "concurrency":1000000,
-        "availability":1.0,
-        "properties":[]
+    "client": {
+        "type": "client",
+        "caps": ["client"],
+        "service_times": {},
+        "cost": {},
+        "concurrency": 1000000,
+        "availability": 1.0,
+        "properties": []
     },
-
-    "app_server":{
-        "type":"app_server",
-        "caps":["compute"],
-        "authoritative":false,
-        "service_times":{
-            "compute":{"dist":"lognormal", "p50":1.0,"p99":8.0,"per_kb_time":0.01}
+    "app_server": {
+        "type": "app_server",
+        "caps": ["compute"],
+        "service_times": {
+            "compute": {"dist": "lognormal", "p50": 1.0, "p99": 8.0, "per_kb_time": 0.01}
         },
-        "cost":{"per_request":0.0001,"per_hour":0.1,"per_million_req":0.2},
-        "concurrency":20,
-        "queue_limit":200,
-        "availability":0.98,
-        "properties":["replicas"],
-        "defaults":{"replicas":1}
+        "cost": {"per_request": 0.0001, "per_hour": 0.10, "per_million_req": 0.2},
+        "concurrency": 20,
+        "queue_limit": 200,
+        "availability": 0.98,
+        "properties": ["replicas", "tier"],
+        "defaults": {"replicas": 1, "tier": "small"},
+        "tiers": {
+            "small":  {"concurrency": 20,  "per_hour_cost": 0.10},
+            "medium": {"concurrency": 60,  "per_hour_cost": 0.35},
+            "large":  {"concurrency": 160, "per_hour_cost": 1.00}
+        }
     },
-
-    "load_balancer":{
-      "type": "load_balancer",
-      "caps": ["route"],
-      "service_times": {
-        "forward": { "dist": "lognormal", "p50": 0.3, "p99": 2.0,"per_kb_time":0.0 }
-      },
-      "cost": { "per_hour": 0.05, "per_million_req": 0.05 },
-      "concurrency": 10000,
-      "queue_limit": 20000,
-      "availability": 0.9999,
-      "properties": ["replicas", "lb_policy"],
-      "defaults": { "replicas": 1, "lb_policy": "round_robin" }
+    "load_balancer": {
+        "type": "load_balancer",
+        "caps": ["route"],
+        "service_times": {
+            "forward": {"dist": "lognormal", "p50": 0.3, "p99": 2.0, "per_kb_time": 0.0}
+        },
+        "cost": {"per_hour": 0.05, "per_million_req": 0.05},
+        "concurrency": 10000,
+        "queue_limit": 20000,
+        "availability": 0.9999,
+        "properties": ["replicas", "lb_policy"],
+        "defaults": {"replicas": 1, "lb_policy": "round_robin"}
     },
-
-    "postgres":{
-      "type": "postgres",
-      "caps": ["store"],
-      "persistent": true,
-      "service_ms": {
-        "read": { "dist": "lognormal", "p50": 4.0, "p99": 25.0 },
-        "write": { "dist": "lognormal", "p50": 6.0, "p99": 40.0 },
-        "per_kb": 0.05
-      },
-      "cost": { "per_hour": 0.35, "per_million_req": 1.0, "per_gb_hour": 0.0002 },
-      "concurrency": 200,
-      "queue_limit": 500,
-      "availability": 0.999,
-      "properties": ["replicas"],
-      "defaults": { "replicas": 1 }
+    "postgres": {
+        "type": "postgres",
+        "caps": ["store"],
+        "persistent": true,
+        "service_times": {
+            "read":  {"dist": "lognormal", "p50": 4.0, "p99": 25.0, "per_kb_time": 0.05},
+            "write": {"dist": "lognormal", "p50": 6.0, "p99": 40.0, "per_kb_time": 0.05}
+        },
+        "cost": {"per_hour": 0.35, "per_million_req": 1.0, "per_gb_hour": 0.0002},
+        "concurrency": 200,
+        "queue_limit": 500,
+        "availability": 0.999,
+        "properties": ["replicas", "tier"],
+        "defaults": {"replicas": 1, "tier": "small"},
+        "tiers": {
+            "small":  {"concurrency": 200, "per_hour_cost": 0.35},
+            "medium": {"concurrency": 350, "per_hour_cost": 0.80},
+            "large":  {"concurrency": 500, "per_hour_cost": 1.40, "service_multiplier": 0.85}
+        }
     },
-    "mongo":{
-      "type": "mongo",
-      "caps": ["store"],
-      "persistent": true,
-      "service_ms": {
-        "read": { "dist": "lognormal", "p50": 3.0, "p99": 22.0 },
-        "write": { "dist": "lognormal", "p50": 5.0, "p99": 35.0 },
-        "per_kb": 0.05
-      },
-      "cost": { "per_hour": 0.32, "per_million_req": 0.9, "per_gb_hour": 0.0002 },
-      "concurrency": 250,
-      "queue_limit": 500,
-      "availability": 0.999,
-      "properties": ["replicas"],
-      "defaults": { "replicas": 1 }
+    "mongo": {
+        "type": "mongo",
+        "caps": ["store"],
+        "persistent": true,
+        "service_times": {
+            "read":  {"dist": "lognormal", "p50": 3.0, "p99": 22.0, "per_kb_time": 0.05},
+            "write": {"dist": "lognormal", "p50": 5.0, "p99": 35.0, "per_kb_time": 0.05}
+        },
+        "cost": {"per_hour": 0.32, "per_million_req": 0.9, "per_gb_hour": 0.0002},
+        "concurrency": 250,
+        "queue_limit": 500,
+        "availability": 0.999,
+        "properties": ["replicas"],
+        "defaults": {"replicas": 1}
     },
-    "redis":{
-      "type": "redis",
-      "caps": ["store"],
-      "persistent": false,
-      "service_ms": {
-        "read": { "dist": "lognormal", "p50": 0.2, "p99": 1.5 },
-        "write": { "dist": "lognormal", "p50": 0.25, "p99": 2.0 },
-        "per_kb": 0.005
-      },
-      "cost": { "per_hour": 0.15, "per_million_req": 0.1, "per_gb_hour": 0.01 },
-      "concurrency": 5000,
-      "queue_limit": 10000,
-      "availability": 0.999,
-      "properties": ["replicas", "capacity", "fill_on_miss", "write_policy"],
-      "defaults": { "replicas": 1, "capacity": 100000, "fill_on_miss": true, "write_policy": "write_around" }
+    "redis": {
+        "type": "redis",
+        "caps": ["store"],
+        "persistent": false,
+        "service_times": {
+            "read":  {"dist": "lognormal", "p50": 0.2,  "p99": 1.5, "per_kb_time": 0.005},
+            "write": {"dist": "lognormal", "p50": 0.25, "p99": 2.0, "per_kb_time": 0.005}
+        },
+        "cost": {"per_hour": 0.15, "per_million_req": 0.1, "per_gb_hour": 0.01},
+        "concurrency": 5000,
+        "queue_limit": 10000,
+        "availability": 0.999,
+        "properties": ["replicas", "capacity", "ttl", "fill_on_miss", "fill_mode", "write_policy"],
+        "defaults": {"replicas": 1, "capacity": 100000, "fill_on_miss": true,
+                     "fill_mode": "async", "write_policy": "write_around"}
     },
-    "memcached":{
-      "type": "memcached",
-      "caps": ["store"],
-      "persistent": false,
-      "service_ms": {
-        "read": { "dist": "lognormal", "p50": 0.15, "p99": 1.2 },
-        "write": { "dist": "lognormal", "p50": 0.2, "p99": 1.5 },
-        "per_kb": 0.005
-      },
-      "cost": { "per_hour": 0.12, "per_million_req": 0.08, "per_gb_hour": 0.009 },
-      "concurrency": 5000,
-      "queue_limit": 10000,
-      "availability": 0.998,
-      "properties": ["replicas", "capacity", "fill_on_miss", "write_policy"],
-      "defaults": { "replicas": 1, "capacity": 100000, "fill_on_miss": true, "write_policy": "write_around" }
+    "memcached": {
+        "type": "memcached",
+        "caps": ["store"],
+        "persistent": false,
+        "service_times": {
+            "read":  {"dist": "lognormal", "p50": 0.15, "p99": 1.2, "per_kb_time": 0.005},
+            "write": {"dist": "lognormal", "p50": 0.2,  "p99": 1.5, "per_kb_time": 0.005}
+        },
+        "cost": {"per_hour": 0.12, "per_million_req": 0.08, "per_gb_hour": 0.009},
+        "concurrency": 5000,
+        "queue_limit": 10000,
+        "availability": 0.998,
+        "properties": ["replicas", "capacity", "ttl", "fill_on_miss", "fill_mode", "write_policy"],
+        "defaults": {"replicas": 1, "capacity": 100000, "fill_on_miss": true,
+                     "fill_mode": "async", "write_policy": "write_around"}
     },
-    "cdn_cache":{
-      "type": "cdn_cache",
-      "caps": ["route", "store"],
-      "persistent": false,
-      "service_ms": {
-        "forward": { "dist": "lognormal", "p50": 0.5, "p99": 3.0 },
-        "read": { "dist": "lognormal", "p50": 0.5, "p99": 4.0 },
-        "write": { "dist": "lognormal", "p50": 0.6, "p99": 5.0 },
-        "per_kb": 0.002
-      },
-      "cost": { "per_hour": 0.02, "per_million_req": 0.6, "per_gb_hour": 0.008 },
-      "concurrency": 10000,
-      "queue_limit": 20000,
-      "availability": 0.9999,
-      "user_settings": ["capacity", "fill_on_miss", "write_policy"],
-      "defaults": { "capacity": 500000, "fill_on_miss": true, "write_policy": "write_around" }
+    "cdn_cache": {
+        "type": "cdn_cache",
+        "caps": ["route", "store"],
+        "persistent": false,
+        "service_times": {
+            "forward": {"dist": "lognormal", "p50": 0.5, "p99": 3.0, "per_kb_time": 0.002},
+            "read":    {"dist": "lognormal", "p50": 0.5, "p99": 4.0, "per_kb_time": 0.002},
+            "write":   {"dist": "lognormal", "p50": 0.6, "p99": 5.0, "per_kb_time": 0.002}
+        },
+        "cost": {"per_hour": 0.02, "per_million_req": 0.6, "per_gb_hour": 0.008},
+        "concurrency": 10000,
+        "queue_limit": 20000,
+        "availability": 0.9999,
+        "properties": ["capacity", "ttl", "fill_on_miss", "fill_mode", "write_policy"],
+        "defaults": {"capacity": 500000, "fill_on_miss": true,
+                     "fill_mode": "async", "write_policy": "write_around"}
     },
-    "kafka":{
-      "type": "kafka",
-      "caps": ["buffer"],
-      "service_ms": {
-        "write": { "dist": "lognormal", "p50": 1.0, "p99": 6.0 },
-        "read": { "dist": "lognormal", "p50": 1.0, "p99": 6.0 },
-        "per_kb": 0.01
-      },
-      "concurrency": 2000,
-      "queue_limit": 100000,
-      "cost": { "per_hour": 0.25, "per_million_req": 0.3 },
-      "availability": 0.999,
-      "user_settings": ["replicas"],
-      "defaults": { "replicas": 1 }
+    "kafka": {
+        "type": "kafka",
+        "caps": ["buffer"],
+        "service_times": {
+            "write": {"dist": "lognormal", "p50": 1.0, "p99": 6.0, "per_kb_time": 0.01},
+            "read":  {"dist": "lognormal", "p50": 1.0, "p99": 6.0, "per_kb_time": 0.01}
+        },
+        "cost": {"per_hour": 0.25, "per_million_req": 0.3},
+        "concurrency": 2000,
+        "queue_limit": 100000,
+        "availability": 0.999,
+        "properties": ["replicas"],
+        "defaults": {"replicas": 1}
     },
-    "s3":{
-      "type": "s3",
-      "caps": ["store"],
-      "persistent": true,
-      "service_ms": {
-        "read": { "dist": "lognormal", "p50": 15.0, "p99": 90.0 },
-        "write": { "dist": "lognormal", "p50": 20.0, "p99": 120.0 },
-        "per_kb": 0.02
-    },
-    "cost": { "per_hour": 0.0, "per_million_req": 4.0, "per_gb_hour": 0.00003 },
-    "concurrency": 5000,
-      "queue_limit": 10000,
-      "availability": 0.99999,
-      "user_settings": []
+    "s3": {
+        "type": "s3",
+        "caps": ["store"],
+        "persistent": true,
+        "service_times": {
+            "read":  {"dist": "lognormal", "p50": 15.0, "p99": 90.0,  "per_kb_time": 0.02},
+            "write": {"dist": "lognormal", "p50": 20.0, "p99": 120.0, "per_kb_time": 0.02}
+        },
+        "cost": {"per_hour": 0.0, "per_million_req": 4.0, "per_gb_hour": 0.00003},
+        "concurrency": 5000,
+        "queue_limit": 10000,
+        "availability": 0.99999,
+        "properties": []
     }
 }
