@@ -114,11 +114,13 @@ SETTING_SPECS: Dict[Properties, Settings] = {
 
 
 class TierSpec(BaseModel):
-    """One size preset. Authored here; players only pick the name."""
-    model_config = ConfigDict(extra="forbid")
-
+    """
+    One size preset. Authored here; players only pick the name.
+    Allowing different vals to override the base components values for now. The user chooses whatever is included in the tier, and it should override hopefully
+    """
+    model_config = ConfigDict(extra="allow")
     concurrency: int = Field(..., ge=1)
-    per_hour_cost: float = Field(..., ge=0)
+    per_hour: float = Field(..., ge=0)
     queue_limit: Optional[int] = Field(None, ge=0)
     service_multiplier: float = Field(
         1.0, gt=0,
@@ -201,8 +203,7 @@ class ComponentEntry(BaseModel):
         # tier property and tiers block come together, consistently.
         if (Properties.TIER in self.properties) != (self.tiers is not None):
             raise ValueError(
-                f"'{self.type}': 'tier' in properties requires a tiers block, "
-                "and vice versa")
+                f"'{self.type}': 'tier' in properties requires a tiers block, and vice versa")
         if self.tiers is not None:
             allowed = set(SETTING_SPECS[Properties.TIER].choices)
             unknown = set(self.tiers) - allowed
@@ -211,16 +212,14 @@ class ComponentEntry(BaseModel):
                     f"'{self.type}': unknown tier names {sorted(unknown)}")
             if self.defaults.get("tier") not in self.tiers:
                 raise ValueError(
-                    f"'{self.type}': defaults.tier must name one of "
-                    f"{sorted(self.tiers)}")
+                    f"'{self.type}': defaults.tier must name one of {sorted(self.tiers)}")
 
         # defaults must target exposed properties with legal values.
         exposed = {p.value for p in self.properties}
         for key, value in self.defaults.items():
             if key not in exposed:
                 raise ValueError(
-                    f"'{self.type}': default for '{key}' but it is not in "
-                    f"properties {sorted(exposed)}")
+                    f"'{self.type}': default for '{key}' but it is not in properties {sorted(exposed)}")
             SETTING_SPECS[Properties(key)].validate_value(key, value)
         return self
 
@@ -260,27 +259,45 @@ class ComponentLibrary(BaseModel):
         return Literal[self.components.keys()]
 
 class EffectivePhysics(BaseModel):
-    """What one instance actually runs with, after tier resolution.
-    The DES reads THIS, never raw entry/tier fields."""
-
+    """
+    What one instance actually runs with, after tier resolution.
+    The DES reads THIS, never raw entry/tier fields
+    """
+    #final updated entry based on the inputted changes from user selecting a tier of the same entry
+    model_config = ConfigDict(extra="allow")
+    
     concurrency: int
     queue_limit: int
-    per_hour: float
+    per_hour: Optional[float] = None
     service_multiplier: float = 1.0
 
 
+
 def resolve_physics(entry: ComponentEntry, settings: dict) -> EffectivePhysics:
+    # base = {
+    #     "concurrency": entry.concurrency,
+    #     "queue_limit": entry.queue_limit,
+    #     "per_hour":entry.cost.per_hour,
+    #     "service_multiplier":1.0
+    # }
+    #now base is the entire entry and we just override the entry with the tier vals
+    base = {
+        k:v for k,v in entry.model_dump().items()
+    }
+    print("BASE:!!!!!",base)
+
     tier_name = settings.get("tier", entry.defaults.get("tier"))
-    if entry.tiers is None or tier_name is None:
-        return EffectivePhysics(
-            concurrency=entry.concurrency,
-            queue_limit=entry.queue_limit,
-            per_hour=entry.cost.per_hour
-        )
-    t = entry.tiers[tier_name]
+    if entry.tiers and tier_name in entry.tiers:
+        t = entry.tiers[tier_name]
+        print("T:::!!!!!!!!!!!!!!!",t, type(t),type(entry))
+
+        extra = {k:v for k,v in t.model_dump().items()}
+        base.update(extra)
+
+        #resetting queue limit back because tierspec requires to know same as effectivephysics does  IMPORTANT
+        if t.queue_limit is None:
+            base["queue_limit"] = entry.queue_limit        
+        
     return EffectivePhysics(
-        concurrency=t.concurrency,
-        queue_limit=t.queue_limit if t.queue_limit is not None else entry.queue_limit,
-        per_hour=t.per_hour_cost,
-        service_multiplier=t.service_multiplier if t.service_multiplier is not None else 1.0
+        **base
     )

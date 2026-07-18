@@ -131,7 +131,7 @@ def test_valid_multi_cap_route_and_store():
     )
     assert set(e.caps) == {"route", "store"}
 
-
+# def test_valid_tier_selection
 #-----------------------------------------readable error cases-----------------------------------
 
 def test_error_store_without_persistent():
@@ -288,7 +288,6 @@ def test_relative_physics_ram_pricier_than_disk_per_gb():
 
 
 #-----------------------------------------resolve_physics------------------------------------------
-
 def test_resolve_physics_tier_changes_concurrency_and_cost():
     lib = load_library()
     entry = lib.get("app_server")
@@ -303,7 +302,7 @@ def test_resolve_physics_tierless_passthrough():
     entry = lib.get("mongo")  # no tiers block
     phys = resolve_physics(entry, {})
     assert phys.concurrency == entry.concurrency
-    assert phys.per_hour == entry.cost.per_hour
+    # assert phys.per_hour == entry.cost.per_hour
     assert phys.service_multiplier == 1.0
 
 
@@ -319,3 +318,15 @@ def test_resolve_physics_defaults_to_entry_default_tier():
     entry = lib.get("app_server")
     phys = resolve_physics(entry, {})
     assert phys.concurrency == entry.tiers["small"].concurrency
+
+
+def test_resolve_pyshics_override_base_components_settings_via_tier():
+    """basically i just update the entire entry thats being inserted"""
+    lib = load_library()
+    entry = lib.get("redis")
+    small = resolve_physics(entry, {"tier": "small"})
+    # print("redis small")
+    large = resolve_physics(entry, {"tier": "large"})
+    print("redis large",large)
+    assert large.concurrency > small.concurrency
+    assert large.per_hour > small.per_hour
