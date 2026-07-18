@@ -100,21 +100,15 @@ class Settings(BaseModel):
 
 
 SETTING_SPECS: Dict[Properties, Settings] = {
-    Properties.TIER:         Settings(name="tier", data_type="choice",
-                                      choices=["small", "medium", "large"]),
-    Properties.REPLICAS:     Settings(name="replicas", data_type="int",
-                                      minimum_value=1, maximum_value=64),
-    Properties.CAPACITY:     Settings(name="capacity", data_type="int", minimum_value=1),
-    Properties.TTL:          Settings(name="ttl", data_type="float",
-                                      minimum_value=0.001, optional=True),
-    Properties.FILL_ON_MISS: Settings(name="fill_on_miss", data_type="bool"),
-    Properties.FILL_MODE:    Settings(name="fill_mode", data_type="choice",
-                                      choices=["async", "sync"]),
-    Properties.WRITE_POLICY: Settings(name="write_policy", data_type="choice",
-                                      choices=["write_around", "write_through", "write_back"]),
-    Properties.LB_POLICY:    Settings(name="lb_policy", data_type="choice",
-                                      choices=["round_robin", "least_connections"]),
-    Properties.SHARDS:       Settings(name="shards", data_type="int", minimum_value=1),
+    Properties.TIER:         Settings(name="tier", data_type="choice",choices=["small", "medium", "large"]), 
+    Properties.REPLICAS:     Settings(name="replicas", data_type="int",minimum_value=1, maximum_value=64),        #things that can be replicated, have multiple of(everything basically)
+    Properties.CAPACITY:     Settings(name="capacity", data_type="int", minimum_value=1),                         #only for caches
+    Properties.TTL:          Settings(name="ttl", data_type="float",minimum_value=0.001, optional=True),          #also for cache
+    Properties.FILL_ON_MISS: Settings(name="fill_on_miss", data_type="bool"),                                     #for db,cache
+    Properties.FILL_MODE:    Settings(name="fill_mode", data_type="choice",choices=["async", "sync"]),            #for db,cachr
+    Properties.WRITE_POLICY: Settings(name="write_policy", data_type="choice",choices=["write_around", "write_through", "write_back"]), #db,cache
+    Properties.LB_POLICY:    Settings(name="lb_policy", data_type="choice",choices=["round_robin", "least_connections"]),   #lb
+    Properties.SHARDS:       Settings(name="shards", data_type="int", minimum_value=1),    #db
 }
 
 
@@ -183,13 +177,24 @@ class ComponentEntry(BaseModel):
             if Properties.CAPACITY not in self.properties:
                 raise ValueError(f"'{self.type}': volatile stores must expose 'capacity'")
 
-        # every declared cap has its service ops.
+        #Check for correct ops in service times, returns valerror if theres 1 thats not supposed to be there
         declared = self.service_times.ops()
+        #check for bad ops
+        required_ops = set()
+        for cap in self.caps:
+            required_ops.update(REQUIRED_OPS[cap])
+        if declared-required_ops: #something outside of all required
+            raise ValueError(
+                f"type: {self.type}, capabilities:{self.caps} contains an operation that should not exist for listed capabilies \n"
+                f"Bad Ops: {declared-required_ops}"
+            )
+    
+        #check for missing
         for cap in self.caps:
             missing = REQUIRED_OPS[cap] - declared
             if missing:
                 raise ValueError(
-                    f"'{self.type}': cap '{cap}' requires service_times "
+                    f" type:'{self.type}', capability:'{cap}' requires service_times "
                     f"entries for: {sorted(missing)}")
 
         # tier property and tiers block come together, consistently.
@@ -248,8 +253,10 @@ class ComponentLibrary(BaseModel):
         return len(self.components)
 
     def __list_components__(self)->List[str]:
-        return self.components.keys()
+        return list(self.components.keys())
 
+    def _literal_components__(self)->List[str]:
+        return Literal[self.components.keys()]
 
 class EffectivePhysics(BaseModel):
     """What one instance actually runs with, after tier resolution.
