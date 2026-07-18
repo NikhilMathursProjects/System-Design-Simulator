@@ -1,0 +1,30 @@
+{
+    "entities": {
+        "score": {"record_kb": 0.2, "keyspace": 1000000},
+        "top_list": {"record_kb": 5.0, "keyspace": 1000}
+    },
+    "apis": {
+        "submitScore": {
+            "effect": "mutate", "entity": "score",
+            "op": "increment",
+            "compute_units": 1.0, "write_units": 1.0
+        },
+        "getTop": {
+            "effect": "retrieve", "entity": "top_list",
+            "compute_units": 1.0, "read_units": 1.0
+        }
+    },
+    "traffic": {
+        "shape": "request_response",
+        "rps": 4000,
+        "mix": {"submitScore": 0.3, "getTop": 0.7},
+        "key_dist": "zipf(1.2)"
+    },
+    "slos": {
+        "submitScore": {"p99_ms": 50},
+        "getTop": {"p99_ms": 40},
+        "availability": 0.999,
+        "freshness": {"within_s": 5, "pct": 0.95},
+        "monthly_budget_usd": 600
+    }
+}

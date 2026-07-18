@@ -1,0 +1,29 @@
+{
+    "entities": {
+        "inventory": {"record_kb": 0.2, "keyspace": 500}
+    },
+    "apis": {
+        "reserveItem": {
+            "effect": "mutate", "entity": "inventory",
+            "op": "decrement", "condition": "stock > 0",
+            "compute_units": 1.0, "write_units": 1.0
+        },
+        "getStock": {
+            "effect": "retrieve", "entity": "inventory",
+            "compute_units": 0.5, "read_units": 1.0
+        }
+    },
+    "traffic": {
+        "shape": "burst",
+        "rps_profile": [[0, 500], [30, 25000], [90, 25000], [120, 1000]],
+        "mix": {"reserveItem": 0.6, "getStock": 0.4},
+        "key_dist": "zipf(1.5)"
+    },
+    "slos": {
+        "reserveItem": {"p99_ms": 500},
+        "getStock": {"p99_ms": 100},
+        "availability": 0.999,
+        "oversell": 0,
+        "monthly_budget_usd": 1500
+    }
+}

@@ -1,0 +1,31 @@
+{
+    "entities": {
+        "profile": {"record_kb": 2.0, "keyspace": 100000},
+        "profile_enriched": {"record_kb": 4.0, "keyspace": 100000}
+    },
+    "apis": {
+        "enrichRecord": {
+            "reads": [{"entity": "profile", "read_units": 1.0}],
+            "compute_units": 3.0,
+            "writes": [{"entity": "profile_enriched", "write_units": 1.0}]
+        },
+        "getEnriched": {
+            "effect": "retrieve", "entity": "profile_enriched",
+            "compute_units": 0.5, "read_units": 1.0
+        }
+    },
+    "traffic": {
+        "shape": "request_response",
+        "rps": 500,
+        "mix": {"enrichRecord": 0.4, "getEnriched": 0.6},
+        "key_dist": "zipf(1.0)",
+        "unknown_key_pct": 0.02
+    },
+    "slos": {
+        "enrichRecord": {"p99_ms": 600},
+        "getEnriched": {"p99_ms": 100},
+        "availability": 0.999,
+        "durability": 0.99999,
+        "monthly_budget_usd": 800
+    }
+}

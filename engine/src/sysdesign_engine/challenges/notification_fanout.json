@@ -1,0 +1,30 @@
+{
+    "entities": {
+        "notification": {"record_kb": 0.5, "keyspace": 50000000}
+    },
+    "apis": {
+        "pushNotification": {
+            "effect": "deliver", "entity": "notification", "to": "subscriber",
+            "compute_units": 1.0, "write_units": 1.0
+        },
+        "getUnread": {
+            "effect": "retrieve", "entity": "notification",
+            "compute_units": 0.5, "read_units": 2.0
+        }
+    },
+    "traffic": {
+        "shape": "session",
+        "connect_rps": 200,
+        "session_duration_s": 600,
+        "messages_per_sec": 0.1,
+        "mix": {"pushNotification": 0.8, "getUnread": 0.2},
+        "key_dist": "zipf(1.0)"
+    },
+    "slos": {
+        "pushNotification": {"p99_ms": 200},
+        "getUnread": {"p99_ms": 150},
+        "availability": 0.999,
+        "durability": 0.999,
+        "monthly_budget_usd": 1200
+    }
+}

@@ -1,0 +1,30 @@
+{
+    "entities": {
+        "reading": {"record_kb": 0.3, "keyspace": 500000000}
+    },
+    "apis": {
+        "reportReading": {
+            "effect": "store", "entity": "reading",
+            "compute_units": 0.5, "write_units": 1.0
+        },
+        "getLatest": {
+            "effect": "retrieve", "entity": "reading",
+            "compute_units": 0.5, "read_units": 1.0
+        }
+    },
+    "traffic": {
+        "shape": "request_response",
+        "rps": 30000,
+        "mix": {"reportReading": 0.97, "getLatest": 0.03},
+        "key_dist": "zipf(0.7)",
+        "unknown_key_pct": 0.05
+    },
+    "slos": {
+        "reportReading": {"p99_ms": 200},
+        "getLatest": {"p99_ms": 100},
+        "availability": 0.99,
+        "durability": 0.99,
+        "completion_threshold": 0.99,
+        "monthly_budget_usd": 400
+    }
+}

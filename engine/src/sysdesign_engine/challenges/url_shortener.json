@@ -1,0 +1,29 @@
+{
+    "entities": {
+        "mapping": {"record_kb": 0.3, "keyspace": 10000000}
+    },
+    "apis": {
+        "setShort": {
+            "effect": "store", "entity": "mapping",
+            "compute_units": 2.0, "write_units": 1.0
+        },
+        "getShort": {
+            "effect": "retrieve", "entity": "mapping",
+            "compute_units": 0.5, "read_units": 1.0
+        }
+    },
+    "traffic": {
+        "shape": "request_response",
+        "rps": 5000,
+        "mix": {"getShort": 0.9, "setShort": 0.1},
+        "key_dist": "zipf(1.1)",
+        "unknown_key_pct": 0.03
+    },
+    "slos": {
+        "getShort": {"p99_ms": 100},
+        "setShort": {"p99_ms": 300},
+        "availability": 0.999,
+        "durability": 0.99999,
+        "monthly_budget_usd": 800
+    }
+}

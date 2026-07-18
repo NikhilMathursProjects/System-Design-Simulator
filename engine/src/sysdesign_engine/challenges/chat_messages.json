@@ -1,0 +1,30 @@
+{
+    "entities": {
+        "message": {"record_kb": 1.0, "keyspace": 10000000}
+    },
+    "apis": {
+        "sendMessage": {
+            "effect": "deliver", "entity": "message", "to": "recipient",
+            "compute_units": 1.0, "write_units": 1.0
+        },
+        "fetchHistory": {
+            "effect": "retrieve", "entity": "message",
+            "compute_units": 1.0, "read_units": 3.0
+        }
+    },
+    "traffic": {
+        "shape": "session",
+        "connect_rps": 50,
+        "session_duration_s": 1800,
+        "messages_per_sec": 0.5,
+        "mix": {"sendMessage": 0.7, "fetchHistory": 0.3},
+        "key_dist": "zipf(1.1)"
+    },
+    "slos": {
+        "sendMessage": {"p99_ms": 150},
+        "fetchHistory": {"p99_ms": 300},
+        "availability": 0.999,
+        "durability": 0.9999,
+        "monthly_budget_usd": 1000
+    }
+}

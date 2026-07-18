@@ -1,0 +1,29 @@
+{
+    "entities": {
+        "clip": {"record_kb": 2000.0, "keyspace": 50000}
+    },
+    "apis": {
+        "getClip": {
+            "effect": "retrieve", "entity": "clip",
+            "compute_units": 0.5, "read_units": 1.0
+        },
+        "uploadClip": {
+            "effect": "store", "entity": "clip",
+            "compute_units": 4.0, "write_units": 2.0
+        }
+    },
+    "traffic": {
+        "shape": "request_response",
+        "rps": 800,
+        "mix": {"getClip": 0.95, "uploadClip": 0.05},
+        "key_dist": "zipf(1.1)",
+        "unknown_key_pct": 0.01
+    },
+    "slos": {
+        "getClip": {"p99_ms": 800},
+        "uploadClip": {"p99_ms": 3000},
+        "availability": 0.999,
+        "durability": 0.99999,
+        "monthly_budget_usd": 2000
+    }
+}

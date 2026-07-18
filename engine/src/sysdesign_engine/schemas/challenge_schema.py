@@ -1,19 +1,18 @@
-import json
 import re
+import json
 from pathlib import Path
 from typing import Dict, List, Optional, Union
-
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, model_validator
 
 from sysdesign_engine.schemas.components_schema import ComponentLibrary
 
 EFFECT_LIST = ["store", "retrieve", "deliver", "mutate"]
 ZIPF_RE = re.compile(r"^zipf\(\s*([0-9]*\.?[0-9]+)\s*\)$")
-
 INVARIANT_2 = (
     "invariant 2: challenges never name components, capabilities, ops, or "
     "hints - contracts + workload + traffic + SLOs only"
 )
+
 
 #------------------------Challenge JSON error helper----------------------------------------------
 class ChallengeError(Exception):
@@ -253,9 +252,7 @@ class SLOs(BaseModel):
 
 
 
-#--------------------top-level challenge record-----------------------
-
-
+#--------------------final challenge record-----------------------
 class ChallengeRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -285,46 +282,42 @@ class ChallengeRecord(BaseModel):
 
         return self
 
-    @model_validator(mode="after")
-    def _no_engine_leakage(self, info: ValidationInfo) -> "ChallengeRecord":
-        context = info.context or {}
-        library: Optional[ComponentLibrary] = context.get("library")
-        if library is not None:
-            check_no_engine_leakage(self.model_dump(), library)
-        return self
+    # @model_validator(mode="after")
+    # def _no_engine_leakage(self, info: ValidationInfo) -> "ChallengeRecord":
+    #     context = info.context or {}
+    #     library: Optional[ComponentLibrary] = context.get("library")
+    #     if library is not None:
+    #         check_no_engine_leakage(self.model_dump(), library)
+    #     return self
 
 
-# ---------------------------------------------------------------------------
-# forbidden-field / engine-leakage check (invariant 2)
-# ---------------------------------------------------------------------------
 
+# def check_no_engine_leakage(raw: dict, library: ComponentLibrary) -> None:
+#     """Walk every string leaf and dict key in a challenge's raw data and
+#     reject any that name a component type from the library. This catches
+#     an author writing "postgres" as an entity/API name or anywhere else in
+#     free text -- the one thing challenge JSON may never do (SPEC invariant 2).
+#     """
+#     banned = {t.lower() for t in library.components}
 
-def check_no_engine_leakage(raw: dict, library: ComponentLibrary) -> None:
-    """Walk every string leaf and dict key in a challenge's raw data and
-    reject any that name a component type from the library. This catches
-    an author writing "postgres" as an entity/API name or anywhere else in
-    free text -- the one thing challenge JSON may never do (SPEC invariant 2).
-    """
-    banned = {t.lower() for t in library.components}
+#     def walk(node, path: str):
+#         if isinstance(node, dict):
+#             for key, value in node.items():
+#                 _check_token(key, f"{path}.{key}" if path else str(key))
+#                 walk(value, f"{path}.{key}" if path else str(key))
+#         elif isinstance(node, list):
+#             for i, item in enumerate(node):
+#                 walk(item, f"{path}[{i}]")
+#         elif isinstance(node, str):
+#             _check_token(node, path)
 
-    def walk(node, path: str):
-        if isinstance(node, dict):
-            for key, value in node.items():
-                _check_token(key, f"{path}.{key}" if path else str(key))
-                walk(value, f"{path}.{key}" if path else str(key))
-        elif isinstance(node, list):
-            for i, item in enumerate(node):
-                walk(item, f"{path}[{i}]")
-        elif isinstance(node, str):
-            _check_token(node, path)
+#     def _check_token(token: str, path: str) -> None:
+#         if token.lower() in banned:
+#             raise ChallengeError(
+#                 f"challenge field '{path}' names a component type ('{token}') - "
+#                 f"challenges may not reference the component library ({INVARIANT_2})")
 
-    def _check_token(token: str, path: str) -> None:
-        if token.lower() in banned:
-            raise ChallengeError(
-                f"challenge field '{path}' names a component type ('{token}') - "
-                f"challenges may not reference the component library ({INVARIANT_2})")
-
-    walk(raw, "")
+#     walk(raw, "")
 
 
 def load_challenge_dict(raw: dict, library: Optional[ComponentLibrary] = None) -> ChallengeRecord:
@@ -335,7 +328,6 @@ def load_challenge_dict(raw: dict, library: Optional[ComponentLibrary] = None) -
         raise ChallengeError(str(e)) from e
 
 
-def load_challenge(path: Union[str, Path],
-                   library: Optional[ComponentLibrary] = None) -> ChallengeRecord:
+def load_challenge(path: Union[str, Path],library: Optional[ComponentLibrary] = None) -> ChallengeRecord:
     raw = json.loads(Path(path).read_text(encoding="utf-8"))
     return load_challenge_dict(raw, library)

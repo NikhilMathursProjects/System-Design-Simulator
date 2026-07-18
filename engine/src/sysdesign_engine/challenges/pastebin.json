@@ -1,0 +1,29 @@
+{
+    "entities": {
+        "paste": {"record_kb": 10.0, "keyspace": 5000000}
+    },
+    "apis": {
+        "createPaste": {
+            "effect": "store", "entity": "paste",
+            "compute_units": 1.0, "write_units": 1.0
+        },
+        "getPaste": {
+            "effect": "retrieve", "entity": "paste",
+            "compute_units": 0.5, "read_units": 1.0
+        }
+    },
+    "traffic": {
+        "shape": "request_response",
+        "rps": 2000,
+        "mix": {"getPaste": 0.85, "createPaste": 0.15},
+        "key_dist": "zipf(1.05)",
+        "unknown_key_pct": 0.05
+    },
+    "slos": {
+        "getPaste": {"p99_ms": 150},
+        "createPaste": {"p99_ms": 400},
+        "availability": 0.999,
+        "durability": 0.99999,
+        "monthly_budget_usd": 600
+    }
+}

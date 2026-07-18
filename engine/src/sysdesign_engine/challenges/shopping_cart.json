@@ -1,0 +1,36 @@
+{
+    "entities": {
+        "cart": {"record_kb": 1.5, "keyspace": 3000000},
+        "order": {"record_kb": 2.5, "keyspace": 10000000}
+    },
+    "apis": {
+        "addToCart": {
+            "effect": "store", "entity": "cart",
+            "compute_units": 1.0, "write_units": 1.0
+        },
+        "getCart": {
+            "effect": "retrieve", "entity": "cart",
+            "compute_units": 0.5, "read_units": 1.0
+        },
+        "checkoutCart": {
+            "reads": [{"entity": "cart", "read_units": 1.0}],
+            "compute_units": 4.0,
+            "writes": [{"entity": "order", "write_units": 1.5}]
+        }
+    },
+    "traffic": {
+        "shape": "request_response",
+        "rps": 5000,
+        "mix": {"addToCart": 0.35, "getCart": 0.6, "checkoutCart": 0.05},
+        "key_dist": "zipf(1.0)",
+        "unknown_key_pct": 0.01
+    },
+    "slos": {
+        "addToCart": {"p99_ms": 100},
+        "getCart": {"p99_ms": 60},
+        "checkoutCart": {"p99_ms": 800},
+        "availability": 0.9995,
+        "durability": 0.99999,
+        "monthly_budget_usd": 1400
+    }
+}

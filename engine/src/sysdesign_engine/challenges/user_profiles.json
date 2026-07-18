@@ -1,0 +1,29 @@
+{
+    "entities": {
+        "profile": {"record_kb": 2.0, "keyspace": 1000000}
+    },
+    "apis": {
+        "getProfile": {
+            "effect": "retrieve", "entity": "profile",
+            "compute_units": 0.5, "read_units": 1.0
+        },
+        "updateProfile": {
+            "effect": "store", "entity": "profile",
+            "compute_units": 1.5, "write_units": 1.0
+        }
+    },
+    "traffic": {
+        "shape": "request_response",
+        "rps": 6000,
+        "mix": {"getProfile": 0.95, "updateProfile": 0.05},
+        "key_dist": "zipf(1.2)",
+        "unknown_key_pct": 0.02
+    },
+    "slos": {
+        "getProfile": {"p99_ms": 80},
+        "updateProfile": {"p99_ms": 250},
+        "availability": 0.999,
+        "durability": 0.99999,
+        "monthly_budget_usd": 900
+    }
+}

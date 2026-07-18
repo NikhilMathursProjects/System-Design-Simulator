@@ -71,7 +71,7 @@
         "concurrency": 250,
         "queue_limit": 500,
         "availability": 0.999,
-        "properties": ["replicas"],
+        "properties": ["replicas","shards"],
         "defaults": {"replicas": 1}
     },
     "redis": {
@@ -86,9 +86,15 @@
         "concurrency": 5000,
         "queue_limit": 10000,
         "availability": 0.999,
-        "properties": ["replicas", "capacity", "ttl", "fill_on_miss", "fill_mode", "write_policy"],
-        "defaults": {"replicas": 1, "capacity": 100000, "fill_on_miss": true,
-                     "fill_mode": "async", "write_policy": "write_around"}
+        "properties": ["tier","replicas", "capacity", "ttl", "fill_on_miss", "fill_mode", "write_policy"],
+        "defaults": {
+            "replicas": 1,"tiers":"small", "capacity": 100000, "fill_on_miss": true,"fill_mode": "async", "write_policy": "write_around"
+        },
+        "tiers":{
+            "small":{"capacity": 100000, "fill_on_miss": true,"fill_mode": "async", "write_policy": "write_around","per_gb_hour":0.01},
+            "medium":{"capacity": 1000000, "fill_on_miss": true,"fill_mode": "async", "write_policy": "write_around","per_gb_hour":0.1},
+            "large":{"capacity": 10000000, "fill_on_miss": true,"fill_mode": "async", "write_policy": "write_around","per_gb_hour":1}
+        }
     },
     "memcached": {
         "type": "memcached",

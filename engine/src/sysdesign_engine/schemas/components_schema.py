@@ -1,6 +1,5 @@
 from enum import Enum
 from typing import Dict, List, Literal, Optional, Union
-
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 CAPABILITY_LIST = Literal["store", "compute", "route", "buffer", "client"]
@@ -49,8 +48,8 @@ class CostModel(BaseModel):
 
 
 class Properties(str, Enum):
-    """Knobs a player may set per instance. Closed set: no hit_ratio,
-    no processing times, no connection counts. Ever."""
+    """
+    Knobs a player may set per instance. User cannot set: hit_ratio,processing times"""
 
     TIER = "tier"
     REPLICAS = "replicas"
@@ -64,8 +63,10 @@ class Properties(str, Enum):
 
 
 class Settings(BaseModel):
-    """Type + constraints for ONE property. Consumed by graph validation
-    and the settings-panel UI."""
+    """
+    Type + constraints for ONE property. Consumed by graph validation and the settings-panel UI\n
+    Will be chosen by the users
+    """
     model_config = ConfigDict(extra="forbid")
 
     name: str
@@ -121,8 +122,8 @@ class TierSpec(BaseModel):
     queue_limit: Optional[int] = Field(None, ge=0)
     service_multiplier: float = Field(
         1.0, gt=0,
-        description="scales p50/p99 for ALL ops; use sparingly "
-                    "(e.g. 0.85 for a DB whose bigger buffer pool speeds reads)")
+        description="scales p50/p99 for ALL ops; use sparingly (e.g. 0.85 for a DB whose bigger buffer pool speeds reads)"
+    )
 
 
 class ServiceTimes(BaseModel):
@@ -148,7 +149,7 @@ class ComponentEntry(BaseModel):
     persistent: Optional[bool] = None
     service_times: ServiceTimes = Field(default_factory=ServiceTimes)
     cost: CostModel = Field(default_factory=CostModel)
-    concurrency: int = Field(..., ge=1, description="parallel slots on ONE instance")
+    concurrency: Optional[int] = Field(..., ge=1, description="parallel slots on ONE instance") #user should be able to change this value
     queue_limit: int = Field(0, ge=0, description="bounded admission queue; 0 = no queueing")
     availability: float = Field(..., gt=0, le=1)
     properties: List[Properties] = Field(default_factory=list)

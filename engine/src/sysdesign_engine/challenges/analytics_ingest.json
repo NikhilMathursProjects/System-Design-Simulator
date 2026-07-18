@@ -1,0 +1,30 @@
+{
+    "entities": {
+        "event_record": {"record_kb": 1.0, "keyspace": 100000000},
+        "report": {"record_kb": 50.0, "keyspace": 5000}
+    },
+    "apis": {
+        "ingestEvent": {
+            "effect": "store", "entity": "event_record",
+            "compute_units": 0.5, "write_units": 1.0
+        },
+        "buildReport": {
+            "reads": [{"entity": "event_record", "read_units": 10.0}],
+            "compute_units": 5.0,
+            "writes": [{"entity": "report", "write_units": 1.0}]
+        }
+    }, 
+    "traffic": {
+        "shape": "request_response",
+        "rps": 15000,
+        "mix": {"ingestEvent": 0.99, "buildReport": 0.01},
+        "key_dist": "zipf(0.8)"
+    },
+    "slos": {
+        "ingestEvent": {"p99_ms": 100},
+        "buildReport": {"p99_ms": 2000},
+        "availability": 0.999,
+        "durability": 0.999,
+        "monthly_budget_usd": 1100
+    }
+}

@@ -1,0 +1,29 @@
+{
+    "entities": {
+        "session": {"record_kb": 0.5, "keyspace": 2000000}
+    },
+    "apis": {
+        "setSession": {
+            "effect": "store", "entity": "session",
+            "compute_units": 0.5, "write_units": 1.0
+        },
+        "getSession": {
+            "effect": "retrieve", "entity": "session",
+            "compute_units": 0.5, "read_units": 1.0
+        }
+    },
+    "traffic": {
+        "shape": "request_response",
+        "rps": 8000,
+        "mix": {"getSession": 0.7, "setSession": 0.3},
+        "key_dist": "zipf(0.9)",
+        "unknown_key_pct": 0.01
+    },
+    "slos": {
+        "getSession": {"p99_ms": 30},
+        "setSession": {"p99_ms": 50},
+        "availability": 0.999,
+        "durability": 0.999,
+        "monthly_budget_usd": 500
+    }
+}

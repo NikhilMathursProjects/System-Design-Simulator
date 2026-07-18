@@ -1,0 +1,24 @@
+{
+    "entities": {
+        "bucket": {"record_kb": 0.1, "keyspace": 100000}
+    },
+    "apis": {
+        "checkAndCount": {
+            "effect": "mutate", "entity": "bucket",
+            "op": "increment", "condition": "count < 100",
+            "compute_units": 0.5, "write_units": 1.0
+        }
+    },
+    "traffic": {
+        "shape": "request_response",
+        "rps": 20000,
+        "mix": {"checkAndCount": 1.0},
+        "key_dist": "zipf(1.4)"
+    },
+    "slos": {
+        "checkAndCount": {"p99_ms": 20},
+        "availability": 0.9999,
+        "oversell": 0,
+        "monthly_budget_usd": 700
+    }
+}

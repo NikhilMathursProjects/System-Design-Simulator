@@ -1,0 +1,29 @@
+{
+    "entities": {
+        "article": {"record_kb": 20.0, "keyspace": 100000}
+    },
+    "apis": {
+        "getHomepage": {
+            "effect": "retrieve", "entity": "article",
+            "compute_units": 1.0, "read_units": 2.0
+        },
+        "publishArticle": {
+            "effect": "store", "entity": "article",
+            "compute_units": 3.0, "write_units": 1.0
+        }
+    },
+    "traffic": {
+        "shape": "request_response",
+        "rps": 12000,
+        "mix": {"getHomepage": 0.999, "publishArticle": 0.001},
+        "key_dist": "zipf(1.5)"
+    },
+    "slos": {
+        "getHomepage": {"p99_ms": 100},
+        "publishArticle": {"p99_ms": 1000},
+        "availability": 0.9995,
+        "durability": 0.99999,
+        "freshness": {"within_s": 30, "pct": 0.99},
+        "monthly_budget_usd": 1000
+    }
+}
