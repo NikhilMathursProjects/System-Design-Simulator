@@ -302,7 +302,7 @@ def test_resolve_physics_tierless_passthrough():
     entry = lib.get("mongo")  # no tiers block
     phys = resolve_physics(entry, {})
     assert phys.concurrency == entry.concurrency
-    # assert phys.per_hour == entry.cost.per_hour
+    assert phys.per_hour == entry.cost.per_hour
     assert phys.service_multiplier == 1.0
 
 
@@ -320,13 +320,13 @@ def test_resolve_physics_defaults_to_entry_default_tier():
     assert phys.concurrency == entry.tiers["small"].concurrency
 
 
-def test_resolve_pyshics_override_base_components_settings_via_tier():
+def test_resolve_physics_override_base_components_settings_via_tier():
     """basically i just update the entire entry thats being inserted"""
     lib = load_library()
     entry = lib.get("redis")
     small = resolve_physics(entry, {"tier": "small"})
     # print("redis small")
     large = resolve_physics(entry, {"tier": "large"})
-    print("redis large",large)
+    # print("redis large",large)
     assert large.concurrency > small.concurrency
     assert large.per_hour > small.per_hour

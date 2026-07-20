@@ -39,9 +39,9 @@ class OpPerformance(BaseModel):
 class CostModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    per_request: float = Field(0.0, ge=0)
-    per_hour: float = Field(0.0, ge=0)
-    per_million_req: float = Field(0.0, ge=0)
+    per_request: Optional[float] = Field(0.0, ge=0)
+    per_hour: Optional[float] = Field(0.0, ge=0)
+    per_million_req: Optional[float] = Field(0.0, ge=0)
     per_gb_hour: Optional[float] = Field(
         None, ge=0, description="RAM pricing; required for volatile stores"
     )
@@ -120,7 +120,8 @@ class TierSpec(BaseModel):
     """
     model_config = ConfigDict(extra="allow")
     concurrency: int = Field(..., ge=1)
-    per_hour: float = Field(..., ge=0)
+    # per_hour: float = Field(..., ge=0)
+    cost: CostModel
     queue_limit: Optional[int] = Field(None, ge=0)
     service_multiplier: float = Field(
         1.0, gt=0,
@@ -151,7 +152,7 @@ class ComponentEntry(BaseModel):
     persistent: Optional[bool] = None
     service_times: ServiceTimes = Field(default_factory=ServiceTimes)
     cost: CostModel = Field(default_factory=CostModel)
-    concurrency: Optional[int] = Field(..., ge=1, description="parallel slots on ONE instance") #user should be able to change this value
+    concurrency: int = Field(..., ge=1, description="parallel slots on ONE instance") #user should be able to change this value
     queue_limit: int = Field(0, ge=0, description="bounded admission queue; 0 = no queueing")
     availability: float = Field(..., gt=0, le=1)
     properties: List[Properties] = Field(default_factory=list)
@@ -235,7 +236,8 @@ class ComponentLibrary(BaseModel):
         for key, entry in self.components.items():
             if key != entry.type:
                 raise ValueError(
-                    f"library key '{key}' != entry type '{entry.type}'")
+                    f"library key '{key}' != entry type '{entry.type}'"
+                )
         return self
 
     def get(self, type_name: str) -> ComponentEntry:
@@ -255,9 +257,6 @@ class ComponentLibrary(BaseModel):
     def __list_components__(self)->List[str]:
         return list(self.components.keys())
 
-    def _literal_components__(self)->List[str]:
-        return Literal[self.components.keys()]
-
 class EffectivePhysics(BaseModel):
     """
     What one instance actually runs with, after tier resolution.
@@ -274,30 +273,21 @@ class EffectivePhysics(BaseModel):
 
 
 def resolve_physics(entry: ComponentEntry, settings: dict) -> EffectivePhysics:
-    # base = {
-    #     "concurrency": entry.concurrency,
-    #     "queue_limit": entry.queue_limit,
-    #     "per_hour":entry.cost.per_hour,
-    #     "service_multiplier":1.0
-    # }
-    #now base is the entire entry and we just override the entry with the tier vals
-    base = {
-        k:v for k,v in entry.model_dump().items()
-    }
-    print("BASE:!!!!!",base)
+    #start from the complete entry; the chosen tier overlays it key by key
+    merged = entry.model_dump()
+    merged.pop("tiers", None)  #resolved physics shouldn't carry the tier menu itself
 
     tier_name = settings.get("tier", entry.defaults.get("tier"))
     if entry.tiers and tier_name in entry.tiers:
-        t = entry.tiers[tier_name]
-        print("T:::!!!!!!!!!!!!!!!",t, type(t),type(entry))
+        #exclude_unset: ONLY the fields the tier author literally wrote override;
+        #everything unwritten (queue_limit, missing cost fields, ...) keeps the
+        #entry's value -- so tiers only need to list what CHANGES
+        overrides = entry.tiers[tier_name].model_dump(exclude_unset=True)
+        tier_cost = overrides.pop("cost", {})
+        merged["cost"] = {**merged["cost"], **tier_cost}
+        merged.update(overrides)
 
-        extra = {k:v for k,v in t.model_dump().items()}
-        base.update(extra)
-
-        #resetting queue limit back because tierspec requires to know same as effectivephysics does  IMPORTANT
-        if t.queue_limit is None:
-            base["queue_limit"] = entry.queue_limit        
-        
-    return EffectivePhysics(
-        **base
-    )
+    #per_hour mirrors the MERGED cost block so there is one source of truth
+    merged["per_hour"] = merged["cost"].get("per_hour") or 0.0
+    merged.setdefault("service_multiplier", 1.0)
+    return EffectivePhysics(**merged)

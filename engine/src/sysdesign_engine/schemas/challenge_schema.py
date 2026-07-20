@@ -19,12 +19,14 @@ class ChallengeError(Exception):
     """
     Raised when a challenge JSON fails validation or 
     leaks engine/libraryconcepts (component types, capabilities, topology) into the contract.
+    in the future i could allow specific component types to have some settings, idk
     """
 
 
 
-#-------------------------------entities---------------------------------------
+#-------------------------entities---------------------------------
 class Entity(BaseModel):
+    """Basically the request value(contains size, keyspace[distribution of data] )"""
     model_config = ConfigDict(extra="forbid")
 
     record_kb: float = Field(..., gt=0, description="KB per record") #size
@@ -32,7 +34,7 @@ class Entity(BaseModel):
 
 
 
-#--------------------------------------APIs (contracts)-------------------------------------
+#---------------------------APIs (contracts)----------------------
 class ReadSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -83,15 +85,12 @@ class APIContract(BaseModel):
     @model_validator(mode="after")
     def _shape(self) -> "APIContract":
         is_composite = self.reads is not None or self.writes is not None  #gonna have to add onto this if i ever add more composite types lol
-
-
         if is_composite:
             if self.effect is not None:
                 raise ValueError("composite contracts (reads/writes) must not set 'effect'")
             if self.entity is not None:
                 raise ValueError(
-                    "composite contracts reference entities via reads[].entity / "
-                    "writes[].entity, not a top-level 'entity'")
+                    "composite contracts reference entities via reads[].entity / writes[].entity, not a top-level 'entity'")
             if not self.reads and not self.writes:
                 raise ValueError("composite contract needs at least one of reads/writes")
             if self.to is not None or self.op is not None or self.condition is not None:
@@ -135,7 +134,7 @@ class APIContract(BaseModel):
 
 
 
-#---------------------------------------traffic--------------------------------------------------
+#-----------------traffic--------------------------------
 class Traffic(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -160,8 +159,7 @@ class Traffic(BaseModel):
     def _shape_fields(self) -> "Traffic":
         if self.shape not in ("request_response", "burst", "session"):
             raise ValueError(
-                f"traffic.shape must be one of "
-                f"['request_response', 'burst', 'session'], got {self.shape!r}")
+                f"traffic.shape must be one of ['request_response', 'burst', 'session'], got {self.shape!r}")
 
         if self.key_dist is not None:
             m = ZIPF_RE.match(self.key_dist)
@@ -191,8 +189,7 @@ class Traffic(BaseModel):
         set_from_others = [f for f in other_shapes_fields if getattr(self, f) not in (None, [])]
         if set_from_others:
             raise ValueError(
-                f"'{self.shape}' traffic must not set fields from another shape: "
-                f"{set_from_others}")
+                f"'{self.shape}' traffic must not set fields from another shape: {set_from_others}")
 
         if self.shape == "burst":
             for point in self.rps_profile:
@@ -205,9 +202,7 @@ class Traffic(BaseModel):
 
 
 
-#----------------------------SLOs (mixed dict: known global keys + per-API keys keyed by API name)------------------------------------
-
-
+#----------------------------SLOs (mixed dict: known global keys + per API keys keyed by API name)------------------------------------
 class FreshnessSLO(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -223,7 +218,8 @@ class PerAPISLO(BaseModel):
 
 
 class SLOs(BaseModel):
-    """Flat dict per SPEC Â§3: known global keys alongside per-API keys
+    """
+    known global keys alongside per-API keys
     (keyed by API name, e.g. "getShort": {"p99_ms": 100}). Extras are
     collected into `per_api` and cross-checked against declared APIs by
     ChallengeRecord."""
@@ -282,42 +278,41 @@ class ChallengeRecord(BaseModel):
 
         return self
 
-    # @model_validator(mode="after")
-    # def _no_engine_leakage(self, info: ValidationInfo) -> "ChallengeRecord":
-    #     context = info.context or {}
-    #     library: Optional[ComponentLibrary] = context.get("library")
-    #     if library is not None:
-    #         check_no_engine_leakage(self.model_dump(), library)
-    #     return self
+    @model_validator(mode="after")
+    def _no_engine_leakage(self, info: ValidationInfo) -> "ChallengeRecord":
+        context = info.context or {}
+        library: Optional[ComponentLibrary] = context.get("library")
+        if library is not None:
+            check_no_engine_leakage(self.model_dump(), library)
+        return self
 
 
 
-# def check_no_engine_leakage(raw: dict, library: ComponentLibrary) -> None:
-#     """Walk every string leaf and dict key in a challenge's raw data and
-#     reject any that name a component type from the library. This catches
-#     an author writing "postgres" as an entity/API name or anywhere else in
-#     free text -- the one thing challenge JSON may never do (SPEC invariant 2).
-#     """
-#     banned = {t.lower() for t in library.components}
+def check_no_engine_leakage(raw: dict, library: ComponentLibrary) -> None:
+    """Walk every string leaf and dict key in a challenge's raw data and
+    reject any that name a component type from the library. This catches
+    an author writing "postgres" as an entity/API name or anywhere else in
+    free text -- the one thing challenge JSON may never do (SPEC invariant 2).
+    """
+    banned = {t.lower() for t in library.components}
 
-#     def walk(node, path: str):
-#         if isinstance(node, dict):
-#             for key, value in node.items():
-#                 _check_token(key, f"{path}.{key}" if path else str(key))
-#                 walk(value, f"{path}.{key}" if path else str(key))
-#         elif isinstance(node, list):
-#             for i, item in enumerate(node):
-#                 walk(item, f"{path}[{i}]")
-#         elif isinstance(node, str):
-#             _check_token(node, path)
+    def walk(node, path: str):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                _check_token(key, f"{path}.{key}" if path else str(key))
+                walk(value, f"{path}.{key}" if path else str(key))
+        elif isinstance(node, list):
+            for i, item in enumerate(node):
+                walk(item, f"{path}[{i}]")
+        elif isinstance(node, str):
+            _check_token(node, path)
 
-#     def _check_token(token: str, path: str) -> None:
-#         if token.lower() in banned:
-#             raise ChallengeError(
-#                 f"challenge field '{path}' names a component type ('{token}') - "
-#                 f"challenges may not reference the component library ({INVARIANT_2})")
+    def _check_token(token: str, path: str) -> None:
+        if token.lower() in banned:
+            raise ChallengeError(
+                f"challenge field '{path}' names a component type ('{token}') - challenges may not reference the component library ({INVARIANT_2})")
 
-#     walk(raw, "")
+    walk(raw, "")
 
 
 def load_challenge_dict(raw: dict, library: Optional[ComponentLibrary] = None) -> ChallengeRecord:

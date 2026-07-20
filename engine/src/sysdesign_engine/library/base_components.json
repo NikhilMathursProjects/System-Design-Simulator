@@ -21,9 +21,9 @@
         "properties": ["replicas", "tier"],
         "defaults": {"replicas": 1, "tier": "small"},
         "tiers": {
-            "small":  {"concurrency": 20,  "per_hour": 0.10},
-            "medium": {"concurrency": 60,  "per_hour": 0.35},
-            "large":  {"concurrency": 160, "per_hour": 1.00}
+            "small":  {"concurrency": 20,  "cost":{"per_hour": 0.10}},
+            "medium": {"concurrency": 60,  "cost":{"per_hour": 0.35}},
+            "large":  {"concurrency": 160, "cost":{"per_hour": 1.00}}
         }
     },
     "load_balancer": {
@@ -54,9 +54,9 @@
         "properties": ["replicas", "tier"],
         "defaults": {"replicas": 1, "tier": "small"},
         "tiers": {
-            "small":  {"concurrency": 200, "per_hour": 0.35},
-            "medium": {"concurrency": 350, "per_hour": 0.80},
-            "large":  {"concurrency": 500, "per_hour": 1.40, "service_multiplier": 0.85}
+            "small":  {"concurrency": 200, "cost":{"per_hour": 0.35}},
+            "medium": {"concurrency": 350, "cost":{"per_hour": 0.80}},
+            "large":  {"concurrency": 500, "cost":{"per_hour": 1.40}, "service_multiplier": 0.85}
         }
     },
     "mongo": {
@@ -87,13 +87,26 @@
         "queue_limit": 10000,
         "availability": 0.999,
         "properties": ["tier","replicas", "capacity", "ttl", "fill_on_miss", "fill_mode", "write_policy"],
-        "defaults": {
-            "replicas": 1,"tier":"small", "capacity": 100000, "fill_on_miss": true,"fill_mode": "async", "write_policy": "write_around"
-        },
+        "defaults": {"replicas": 1,"tier":"small", "capacity": 100000, "fill_on_miss": true,"fill_mode": "async", "write_policy": "write_around"},
         "tiers":{
-            "small":{"concurrency":5000,"capacity": 100000, "fill_on_miss": true,"fill_mode": "async", "write_policy": "write_around","per_gb_hour":0.01,"per_hour":0.15},
-            "medium":{"concurrency":10000,"capacity": 1000000, "fill_on_miss": true,"fill_mode": "async", "write_policy": "write_around","per_gb_hour":0.1,"per_hour":1.5},
-            "large":{"concurrency":15000,"capacity": 10000000, "fill_on_miss": true,"fill_mode": "async", "write_policy": "write_around","per_gb_hour":1,"per_hour":15}
+            "small":{
+                "concurrency":5000,
+                "capacity": 100000, 
+                "cost":{"per_hour":0.15,"per_gb_hour":0.01},
+                "fill_on_miss": true,"fill_mode": "async", "write_policy": "write_around"
+            },
+            "medium":{
+                "concurrency":10000,
+                "capacity": 1000000, 
+                "cost":{"per_hour":1.5,"per_gb_hour":0.1},
+                "fill_on_miss": true,"fill_mode": "async", "write_policy": "write_around"
+            },
+            "large":{
+                "concurrency":15000,
+                "capacity": 10000000, 
+                "cost":{"per_hour":15,"per_gb_hour":1},
+                "fill_on_miss": true,"fill_mode": "async", "write_policy": "write_around"
+            }
         }
     },
     "memcached": {
@@ -109,8 +122,7 @@
         "queue_limit": 10000,
         "availability": 0.998,
         "properties": ["replicas", "capacity", "ttl", "fill_on_miss", "fill_mode", "write_policy"],
-        "defaults": {"replicas": 1, "capacity": 100000, "fill_on_miss": true,
-                     "fill_mode": "async", "write_policy": "write_around"}
+        "defaults": {"replicas": 1, "capacity": 100000, "fill_on_miss": true,"fill_mode": "async", "write_policy": "write_around"}
     },
     "cdn_cache": {
         "type": "cdn_cache",

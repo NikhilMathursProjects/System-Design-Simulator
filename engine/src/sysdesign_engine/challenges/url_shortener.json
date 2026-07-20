@@ -14,8 +14,8 @@
     },
     "traffic": {
         "shape": "request_response",
-        "rps": 5000,
-        "mix": {"getShort": 0.9, "setShort": 0.1},
+        "rps": 500,
+        "mix": {"getShort": 0.8, "setShort": 0.2},
         "key_dist": "zipf(1.1)",
         "unknown_key_pct": 0.03
     },
