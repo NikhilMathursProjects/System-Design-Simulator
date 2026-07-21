@@ -31,6 +31,11 @@ class Entity(BaseModel):
 
     record_kb: float = Field(..., gt=0, description="KB per record") #size
     keyspace: int = Field(..., gt=0, description="distinct key count for this entity") #dist
+    # T-072: starting value for `mutate` counters (stock per item, tokens per
+    # rate-limit bucket). Grading asserts successful mutations per key never
+    # exceed this -- it is what makes "oversell = 0" checkable.
+    initial_value: Optional[float] = Field(
+        None, description="mutate only: starting counter value per key")
 
 
 
